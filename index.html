@@ -24,17 +24,33 @@
         }
         /* Map container */
         #map { height: 300px; border-radius: 8px; }
-        /* Subtle flag pattern for header */
+        /* Header pattern (Maasai-inspired) */
         .header-pattern {
-            background-image: linear-gradient(45deg, #008000 25%, #FF0000 25%, #FF0000 50%, #000000 50%, #000000 75%, #FFFFFF 75%);
-            background-size: 40px 40px;
-            opacity: 0.1;
+            background-image: url('https://via.placeholder.com/100x100?text=Maasai+Pattern');
+            opacity: 0.2;
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
             z-index: 0;
+        }
+        /* Animation for real-time indicator */
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        /* Fade-in animation */
+        .fade-in {
+            animation: fadeIn 1s ease-in;
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
         }
     </style>
 </head>
@@ -44,18 +60,40 @@
         <div class="header-pattern"></div>
         <div class="container mx-auto flex items-center justify-between relative z-10">
             <div class="flex items-center">
-                <svg class="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8s-9-3.582-9-8 4.03-8 9-8 9 3.582 9 8z"/>
-                </svg>
+                <img src="https://via.placeholder.com/40x40?text=Maoni+Logo" alt="MaoniBot Logo" class="w-8 h-8 mr-2">
                 <h1 class="text-2xl font-bold">MaoniBot</h1>
             </div>
-            <h2 class="text-lg">Real-time Insights from Kenya’s Online Conversations</h2>
+            <div class="flex items-center">
+                <h2 class="text-lg mr-4">Kenyan Public Sentiment & Trends</h2>
+                <select id="languageToggle" class="bg-white text-black p-1 rounded" onchange="toggleLanguage()">
+                    <option value="en">English</option>
+                    <option value="sw">Kiswahili</option>
+                </select>
+            </div>
         </div>
     </header>
 
-    <!-- Filters -->
+    <!-- Summary Cards -->
     <div class="container mx-auto p-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div class="bg-white p-4 rounded shadow text-center fade-in">
+                <h3 class="text-lg font-semibold">Total Posts</h3>
+                <p class="text-2xl font-bold">1,234</p>
+                <p class="text-gray-600">Analyzed today</p>
+            </div>
+            <div class="bg-white p-4 rounded shadow text-center fade-in">
+                <h3 class="text-lg font-semibold">Top Hashtag</h3>
+                <p class="text-2xl font-bold">#UngaRevolution</p>
+                <p class="text-gray-600">200 posts</p>
+            </div>
+            <div class="bg-white p-4 rounded shadow text-center fade-in">
+                <h3 class="text-lg font-semibold">Dominant Sentiment</h3>
+                <p class="text-2xl font-bold text-red-600">Negative</p>
+                <p class="text-gray-600">30% of posts</p>
+            </div>
+        </div>
+
+        <!-- Filters -->
         <div class="bg-white p-4 rounded shadow mb-4">
             <h3 class="text-lg font-semibold mb-2">Filters</h3>
             <div class="flex flex-wrap gap-4">
@@ -81,20 +119,21 @@
                 </select>
                 <button class="kenya-green text-white p-2 rounded" onclick="downloadCSV()">Export Data (CSV)</button>
             </div>
+            <p class="text-sm text-gray-600 mt-2">
+                Last Updated: <span id="lastUpdated">May 30, 2025, 2:38 PM</span>
+                <span class="inline-block w-2 h-2 bg-green-600 rounded-full ml-2 pulse"></span>
+            </p>
         </div>
 
         <!-- Sentiment Analysis -->
-        <section class="bg-white p-4 rounded shadow mb-4">
+        <section class="bg-white p-4 rounded shadow mb-4 fade-in">
             <h2 class="text-xl font-semibold mb-2">Sentiment Analysis</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                     <canvas id="sentimentPieChart" class="w-full"></canvas>
                 </div>
                 <div>
-                    <p class="text-gray-700">
-                        <strong>Summary:</strong> 60% of posts are Positive, 30% are Negative, and 10% are Neutral. 
-                        Key sentiments around #UngaRevolution show concerns about rising food prices.
-                    </p>
+                    <canvas id="sentimentByTopic" class="w-full"></canvas>
                 </div>
                 <div>
                     <h4 class="font-semibold">Sample Posts</h4>
@@ -108,13 +147,13 @@
         </section>
 
         <!-- Geospatial View -->
-        <section class="bg-white p-4 rounded shadow mb-4">
+        <section class="bg-white p-4 rounded shadow mb-4 fade-in">
             <h2 class="text-xl font-semibold mb-2">Sentiment by County</h2>
             <div id="map"></div>
         </section>
 
         <!-- Trending Topics -->
-        <section class="bg-white p-4 rounded shadow mb-4">
+        <section class="bg-white p-4 rounded shadow mb-4 fade-in">
             <h2 class="text-xl font-semibold mb-2">Trending Topics</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
@@ -128,7 +167,7 @@
         </section>
 
         <!-- Hashtag Tracker -->
-        <section class="bg-white p-4 rounded shadow mb-4">
+        <section class="bg-white p-4 rounded shadow mb-4 fade-in">
             <h2 class="text-xl font-semibold mb-2">Hashtag Tracker</h2>
             <input type="text" id="hashtagSearch" placeholder="Search Hashtag or Keyword" 
                    class="border p-2 rounded w-full mb-2" onkeyup="filterHashtags()">
@@ -138,6 +177,7 @@
                         <th class="p-2">Hashtag</th>
                         <th class="p-2">Count</th>
                         <th class="p-2">Sentiment</th>
+                        <th class="p-2">Retweets</th>
                     </tr>
                 </thead>
                 <tbody id="hashtagTable">
@@ -145,33 +185,57 @@
                         <td class="p-2">#UngaRevolution</td>
                         <td class="p-2">200</td>
                         <td class="p-2 text-red-600">Negative</td>
+                        <td class="p-2">1,200</td>
                     </tr>
                     <tr class="bg-gray-100">
                         <td class="p-2">#KenyaDecides</td>
                         <td class="p-2">150</td>
                         <td class="p-2 text-gray-600">Neutral</td>
+                        <td class="p-2">800</td>
                     </tr>
                     <tr class="kenya-white">
                         <td class="p-2">#CBC</td>
                         <td class="p-2">100</td>
                         <td class="p-2 text-green-600">Positive</td>
+                        <td class="p-2">600</td>
                     </tr>
                     <tr class="bg-gray-100">
                         <td class="p-2">#NHIF</td>
                         <td class="p-2">80</td>
                         <td class="p-2 text-red-600">Negative</td>
+                        <td class="p-2">400</td>
                     </tr>
                     <tr class="kenya-white">
                         <td class="p-2">#HustlerFund</td>
                         <td class="p-2">50</td>
                         <td class="p-2 text-green-600">Positive</td>
+                        <td class="p-2">300</td>
                     </tr>
                 </tbody>
             </table>
         </section>
 
+        <!-- Top Influencers -->
+        <section class="bg-white p-4 rounded shadow mb-4 fade-in">
+            <h2 class="text-xl font-semibold mb-2">Top Influencers</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-gray-100 p-4 rounded text-center">
+                    <p class="font-semibold">@KenyaNews</p>
+                    <p class="text-sm text-gray-600">10K followers | 50 posts on #UngaRevolution</p>
+                </div>
+                <div class="bg-gray-100 p-4 rounded text-center">
+                    <p class="font-semibold">@NairobiVoice</p>
+                    <p class="text-sm text-gray-600">8K followers | 30 posts on #CBC</p>
+                </div>
+                <div class="bg-gray-100 p-4 rounded text-center">
+                    <p class="font-semibold">@MombasaTalk</p>
+                    <p class="text-sm text-gray-600">5K followers | 20 posts on #NHIF</p>
+                </div>
+            </div>
+        </section>
+
         <!-- Fake News Indicator -->
-        <section class="bg-white p-4 rounded shadow">
+        <section class="bg-white p-4 rounded shadow mb-4 fade-in">
             <h2 class="text-xl font-semibold mb-2">Fake News Indicator</h2>
             <table class="w-full border-collapse">
                 <thead>
@@ -192,8 +256,24 @@
                         <td class="p-2">0.60</td>
                         <td class="p-2 text-gray-600">Uncertain</td>
                     </tr>
+                    <tr class="kenya-white">
+                        <td class="p-2">"Free education for all in 2025!"</td>
+                        <td class="p-2">0.90</td>
+                        <td class="p-2 text-red-600">Likely False</td>
+                    </tr>
                 </tbody>
             </table>
+        </section>
+
+        <!-- Feedback Form -->
+        <section class="bg-white p-4 rounded shadow mb-4 fade-in">
+            <h2 class="text-xl font-semibold mb-2">Share Your Feedback</h2>
+            <div class="grid grid-cols-1 gap-4">
+                <input type="text" placeholder="Your Name" class="border p-2 rounded w-full">
+                <input type="text" placeholder="Suggest a Topic or Hashtag" class="border p-2 rounded w-full">
+                <textarea placeholder="Your Feedback" class="border p-2 rounded w-full h-24"></textarea>
+                <button class="kenya-green text-white p-2 rounded">Submit Feedback</button>
+            </div>
         </section>
     </div>
 
@@ -220,6 +300,46 @@
             options: {
                 responsive: true,
                 plugins: { legend: { position: 'top' } }
+            }
+        });
+
+        // Sentiment by Topic Bar Chart
+        const sentimentTopicCtx = document.getElementById('sentimentByTopic').getContext('2d');
+        new Chart(sentimentTopicCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Unga Prices', 'NHIF Reforms', 'CBC Education'],
+                datasets: [
+                    {
+                        label: 'Positive',
+                        data: [20, 40, 60],
+                        backgroundColor: '#008000',
+                    },
+                    {
+                        label: 'Negative',
+                        data: [50, 30, 20],
+                        backgroundColor: '#FF0000',
+                    },
+                    {
+                        label: 'Neutral',
+                        data: [30, 30, 20],
+                        backgroundColor: '#808080',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true, stacked: true }, x: { stacked: true } },
+                plugins: {
+                    legend: { position: 'top' },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${context.raw}%`;
+                            }
+                        }
+                    }
+                }
             }
         });
 
@@ -269,11 +389,10 @@
         });
 
         // Kenya Map
-        const map = L.map('map').setView([-1.286389, 36.817223], 6); // Center on Kenya
+        const map = L.map('map').setView([-1.286389, 36.817223], 6);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         }).addTo(map);
-        // Mock county data (replace with GeoJSON for real data)
         L.circle([-1.286389, 36.817223], {
             color: '#008000',
             fillColor: '#008000',
@@ -288,6 +407,13 @@
             radius: 50000,
             popup: 'Mombasa: 60% Negative'
         }).addTo(map);
+        L.circle([-0.091702, 34.767963], {
+            color: '#808080',
+            fillColor: '#808080',
+            fillOpacity: 0.5,
+            radius: 50000,
+            popup: 'Kisumu: 50% Neutral'
+        }).addTo(map);
 
         // Hashtag Search Filter
         function filterHashtags() {
@@ -299,15 +425,41 @@
             });
         }
 
-        // Export CSV (mock functionality)
+        // Export CSV
         function downloadCSV() {
-            const csv = 'Hashtag,Count,Sentiment\n#UngaRevolution,200,Negative\n#KenyaDecides,150,Neutral\n#CBC,100,Positive\n';
+            const csv = 'Hashtag,Count,Sentiment,Retweets\n#UngaRevolution,200,Negative,1200\n#KenyaDecides,150,Neutral,800\n#CBC,100,Positive,600\n';
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.setAttribute('href', url);
             a.setAttribute('download', 'maonibot_data.csv');
             a.click();
+        }
+
+        // Language Toggle
+        function toggleLanguage() {
+            const lang = document.getElementById('languageToggle').value;
+            if (lang === 'sw') {
+                document.querySelector('h1').textContent = 'Roboti ya Maoni';
+                document.querySelector('h2').textContent = 'Maarifa ya Wakati Halisi kutoka Mazungumzo ya Mtandaoni ya Kenya';
+                document.querySelectorAll('h2')[1].textContent = 'Uchambuzi wa Hisia';
+                document.querySelectorAll('h2')[2].textContent = 'Hisia kwa Kaunti';
+                document.querySelectorAll('h2')[3].textContent = 'Mada za Mwenendo';
+                document.querySelectorAll('h2')[4].textContent = 'Kifuatiliaji cha Hashtag';
+                document.querySelectorAll('h2')[5].textContent = 'Wanathawanyiko wa Juu';
+                document.querySelectorAll('h2')[6].textContent = 'Kiashiria cha Habari za Uongo';
+                document.querySelectorAll('h2')[7].textContent = 'Toa Maoni Yako';
+            } else {
+                document.querySelector('h1').textContent = 'MaoniBot';
+                document.querySelector('h2').textContent = 'Kenyan Public Sentiment & Trends';
+                document.querySelectorAll('h2')[1].textContent = 'Sentiment Analysis';
+                document.querySelectorAll('h2')[2].textContent = 'Sentiment by County';
+                document.querySelectorAll('h2')[3].textContent = 'Trending Topics';
+                document.querySelectorAll('h2')[4].textContent = 'Hashtag Tracker';
+                document.querySelectorAll('h2')[5].textContent = 'Top Influencers';
+                document.querySelectorAll('h2')[6].textContent = 'Fake News Indicator';
+                document.querySelectorAll('h2')[7].textContent = 'Share Your Feedback';
+            }
         }
     </script>
 </body>
