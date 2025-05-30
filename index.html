@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MaoniBot: Kenyan Public Sentiment & Trends</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Leaflet.js CDN for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        /* Kenyan flag-inspired styles */
+        .kenya-green { background-color: #008000; }
+        .kenya-red { background-color: #FF0000; }
+        .kenya-black { background-color: #000000; }
+        .kenya-white { background-color: #FFFFFF; }
+        /* Word cloud placeholder */
+        .word-cloud {
+            background: url('https://via.placeholder.com/300x200?text=Word+Cloud') no-repeat center;
+            background-size: cover;
+        }
+        /* Map container */
+        #map { height: 300px; border-radius: 8px; }
+        /* Subtle flag pattern for header */
+        .header-pattern {
+            background-image: linear-gradient(45deg, #008000 25%, #FF0000 25%, #FF0000 50%, #000000 50%, #000000 75%, #FFFFFF 75%);
+            background-size: 40px 40px;
+            opacity: 0.1;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans relative">
+    <!-- Header -->
+    <header class="kenya-green text-white p-4 relative">
+        <div class="header-pattern"></div>
+        <div class="container mx-auto flex items-center justify-between relative z-10">
+            <div class="flex items-center">
+                <svg class="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8s-9-3.582-9-8 4.03-8 9-8 9 3.582 9 8z"/>
+                </svg>
+                <h1 class="text-2xl font-bold">MaoniBot</h1>
+            </div>
+            <h2 class="text-lg">Real-time Insights from Kenya’s Online Conversations</h2>
+        </div>
+    </header>
+
+    <!-- Filters -->
+    <div class="container mx-auto p-4">
+        <div class="bg-white p-4 rounded shadow mb-4">
+            <h3 class="text-lg font-semibold mb-2">Filters</h3>
+            <div class="flex flex-wrap gap-4">
+                <select class="border p-2 rounded">
+                    <option>Twitter/X</option>
+                    <option>YouTube</option>
+                </select>
+                <select class="border p-2 rounded">
+                    <option>All Languages</option>
+                    <option>English</option>
+                    <option>Kiswahili</option>
+                </select>
+                <select class="border p-2 rounded">
+                    <option>Last 24h</option>
+                    <option>Last 7d</option>
+                    <option>Last 30d</option>
+                </select>
+                <select class="border p-2 rounded">
+                    <option>All Locations</option>
+                    <option>Nairobi</option>
+                    <option>Mombasa</option>
+                    <option>Kisumu</option>
+                </select>
+                <button class="kenya-green text-white p-2 rounded" onclick="downloadCSV()">Export Data (CSV)</button>
+            </div>
+        </div>
+
+        <!-- Sentiment Analysis -->
+        <section class="bg-white p-4 rounded shadow mb-4">
+            <h2 class="text-xl font-semibold mb-2">Sentiment Analysis</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <canvas id="sentimentPieChart" class="w-full"></canvas>
+                </div>
+                <div>
+                    <p class="text-gray-700">
+                        <strong>Summary:</strong> 60% of posts are Positive, 30% are Negative, and 10% are Neutral. 
+                        Key sentiments around #UngaRevolution show concerns about rising food prices.
+                    </p>
+                </div>
+                <div>
+                    <h4 class="font-semibold">Sample Posts</h4>
+                    <ul class="text-sm text-gray-600">
+                        <li class="mb-2"><span class="text-green-600">Positive:</span> "CBC is empowering our kids! #CBC"</li>
+                        <li class="mb-2"><span class="text-red-600">Negative:</span> "Unga prices too high! #UngaRevolution"</li>
+                        <li><span class="text-gray-600">Neutral:</span> "Discussing NHIF reforms today. #NHIF"</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Geospatial View -->
+        <section class="bg-white p-4 rounded shadow mb-4">
+            <h2 class="text-xl font-semibold mb-2">Sentiment by County</h2>
+            <div id="map"></div>
+        </section>
+
+        <!-- Trending Topics -->
+        <section class="bg-white p-4 rounded shadow mb-4">
+            <h2 class="text-xl font-semibold mb-2">Trending Topics</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <canvas id="topicsBarChart" class="w-full"></canvas>
+                </div>
+                <div class="word-cloud h-48 rounded"></div>
+                <div>
+                    <canvas id="topicTimeline" class="w-full"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Hashtag Tracker -->
+        <section class="bg-white p-4 rounded shadow mb-4">
+            <h2 class="text-xl font-semibold mb-2">Hashtag Tracker</h2>
+            <input type="text" id="hashtagSearch" placeholder="Search Hashtag or Keyword" 
+                   class="border p-2 rounded w-full mb-2" onkeyup="filterHashtags()">
+            <table class="w-full border-collapse">
+                <thead>
+                    <tr class="kenya-green text-white">
+                        <th class="p-2">Hashtag</th>
+                        <th class="p-2">Count</th>
+                        <th class="p-2">Sentiment</th>
+                    </tr>
+                </thead>
+                <tbody id="hashtagTable">
+                    <tr class="kenya-white">
+                        <td class="p-2">#UngaRevolution</td>
+                        <td class="p-2">200</td>
+                        <td class="p-2 text-red-600">Negative</td>
+                    </tr>
+                    <tr class="bg-gray-100">
+                        <td class="p-2">#KenyaDecides</td>
+                        <td class="p-2">150</td>
+                        <td class="p-2 text-gray-600">Neutral</td>
+                    </tr>
+                    <tr class="kenya-white">
+                        <td class="p-2">#CBC</td>
+                        <td class="p-2">100</td>
+                        <td class="p-2 text-green-600">Positive</td>
+                    </tr>
+                    <tr class="bg-gray-100">
+                        <td class="p-2">#NHIF</td>
+                        <td class="p-2">80</td>
+                        <td class="p-2 text-red-600">Negative</td>
+                    </tr>
+                    <tr class="kenya-white">
+                        <td class="p-2">#HustlerFund</td>
+                        <td class="p-2">50</td>
+                        <td class="p-2 text-green-600">Positive</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- Fake News Indicator -->
+        <section class="bg-white p-4 rounded shadow">
+            <h2 class="text-xl font-semibold mb-2">Fake News Indicator</h2>
+            <table class="w-full border-collapse">
+                <thead>
+                    <tr class="kenya-red text-white">
+                        <th class="p-2">Post</th>
+                        <th class="p-2">Confidence</th>
+                        <th class="p-2">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="kenya-white">
+                        <td class="p-2">"Unga prices to drop by 50% tomorrow!"</td>
+                        <td class="p-2">0.85</td>
+                        <td class="p-2 text-red-600">Likely False</td>
+                    </tr>
+                    <tr class="bg-gray-100">
+                        <td class="p-2">"NHIF to cover all Kenyans by 2026"</td>
+                        <td class="p-2">0.60</td>
+                        <td class="p-2 text-gray-600">Uncertain</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="kenya-black text-white p-4 mt-4">
+        <div class="container mx-auto text-center">
+            <p>MaoniBot | Powered by xAI | Data sourced from Twitter/X | <a href="#" class="underline">Contact Us</a></p>
+        </div>
+    </footer>
+
+    <!-- JavaScript for Charts, Map, and Interactivity -->
+    <script>
+        // Sentiment Pie Chart
+        const sentimentCtx = document.getElementById('sentimentPieChart').getContext('2d');
+        new Chart(sentimentCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Positive', 'Negative', 'Neutral'],
+                datasets: [{
+                    data: [60, 30, 10],
+                    backgroundColor: ['#008000', '#FF0000', '#808080'],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'top' } }
+            }
+        });
+
+        // Topics Bar Chart
+        const topicsCtx = document.getElementById('topicsBarChart').getContext('2d');
+        new Chart(topicsCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Unga Prices', 'NHIF Reforms', 'CBC Education', 'Politics', 'Healthcare'],
+                datasets: [{
+                    label: 'Frequency',
+                    data: [120, 80, 60, 50, 30],
+                    backgroundColor: '#008000',
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // Topic Timeline Chart
+        const timelineCtx = document.getElementById('topicTimeline').getContext('2d');
+        new Chart(timelineCtx, {
+            type: 'line',
+            data: {
+                labels: ['May 24', 'May 25', 'May 26', 'May 27', 'May 28', 'May 29', 'May 30'],
+                datasets: [
+                    {
+                        label: '#UngaRevolution',
+                        data: [20, 30, 50, 80, 100, 150, 200],
+                        borderColor: '#FF0000',
+                        fill: false
+                    },
+                    {
+                        label: '#CBC',
+                        data: [10, 20, 30, 40, 60, 80, 100],
+                        borderColor: '#008000',
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+
+        // Kenya Map
+        const map = L.map('map').setView([-1.286389, 36.817223], 6); // Center on Kenya
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+        // Mock county data (replace with GeoJSON for real data)
+        L.circle([-1.286389, 36.817223], {
+            color: '#008000',
+            fillColor: '#008000',
+            fillOpacity: 0.5,
+            radius: 50000,
+            popup: 'Nairobi: 55% Positive'
+        }).addTo(map);
+        L.circle([-4.043477, 39.668206], {
+            color: '#FF0000',
+            fillColor: '#FF0000',
+            fillOpacity: 0.5,
+            radius: 50000,
+            popup: 'Mombasa: 60% Negative'
+        }).addTo(map);
+
+        // Hashtag Search Filter
+        function filterHashtags() {
+            const searchTerm = document.getElementById('hashtagSearch').value.toLowerCase();
+            const rows = document.querySelectorAll('#hashtagTable tr');
+            rows.forEach(row => {
+                const hashtag = row.cells[0].textContent.toLowerCase();
+                row.style.display = hashtag.includes(searchTerm) ? '' : 'none';
+            });
+        }
+
+        // Export CSV (mock functionality)
+        function downloadCSV() {
+            const csv = 'Hashtag,Count,Sentiment\n#UngaRevolution,200,Negative\n#KenyaDecides,150,Neutral\n#CBC,100,Positive\n';
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'maonibot_data.csv');
+            a.click();
+        }
+    </script>
+</body>
+</html>
