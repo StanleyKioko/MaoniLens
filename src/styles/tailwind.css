@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Kenyan flag-inspired styles */
+.kenya-green { 
+  background-color: #008000; 
+}
+
+.kenya-red { 
+  background-color: #FF0000; 
+}
+
+.kenya-black { 
+  background-color: #000000; 
+}
+
+.kenya-white { 
+  background-color: #FFFFFF; 
+}
+
+/* Animation for real-time indicator */
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+/* Fade-in animation */
+.fade-in {
+  animation: fadeIn 1s ease-in;
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
